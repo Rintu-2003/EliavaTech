@@ -52,6 +52,19 @@ Always commit the generated `prisma/migrations/*` folder. Run
   after review. Drafts are hidden in production, excluded from the sitemap and
   marked `noindex`.
 
+## Launch diagnostics
+
+If a form shows "We could not submit your request right now", a required setting
+is missing on the host. Set `HEALTH_CHECK_TOKEN`, redeploy, then:
+
+```bash
+curl -H "Authorization: Bearer <HEALTH_CHECK_TOKEN>" https://<your-domain>/api/health
+```
+
+The JSON `problems` list names exactly what is missing (Turnstile secret, email
+provider, database, Redis, Gemini). Values are never shown. Remove the token to
+disable the endpoint again.
+
 ## Notes
 
 - Public business details (email, phone, service area) live in

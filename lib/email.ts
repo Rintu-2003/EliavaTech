@@ -29,6 +29,38 @@ function getEnvValue(key: string): string {
   return "";
 }
 
+export interface EmailConfigStatus {
+  provider: "gmail-smtp" | "resend" | null;
+  ready: boolean;
+  problems: string[];
+}
+
+/** Reports whether email is configured, without sending anything or exposing values. */
+export function getEmailConfigStatus(): EmailConfigStatus {
+  const smtpPass = getEnvValue("GMAIL_APP_PASSWORD") || getEnvValue("SMTP_PASS");
+  const resendKey = getEnvValue("RESEND_API_KEY");
+  const resendFrom = getEnvValue("RESEND_FROM_EMAIL");
+
+  if (smtpPass) {
+    return { provider: "gmail-smtp", ready: true, problems: [] };
+  }
+  if (resendKey) {
+    const problems: string[] = [];
+    if (!resendFrom) problems.push("RESEND_FROM_EMAIL is not set");
+    else if (/@resend\.dev>?$/i.test(resendFrom) && process.env.NODE_ENV === "production") {
+      problems.push("RESEND_FROM_EMAIL uses the Resend test sender");
+    } else if (/@(gmail|yahoo|outlook|hotmail)\.com>?$/i.test(resendFrom)) {
+      problems.push("RESEND_FROM_EMAIL must use a domain verified in Resend");
+    }
+    return { provider: "resend", ready: problems.length === 0, problems };
+  }
+  return {
+    provider: null,
+    ready: false,
+    problems: ["No email provider: set GMAIL_APP_PASSWORD (+ SMTP_USER) or RESEND_API_KEY (+ RESEND_FROM_EMAIL)"],
+  };
+}
+
 export interface LeadEmailPayload {
   leadId?: string;
   name: string;
